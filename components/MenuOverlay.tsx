@@ -7,18 +7,26 @@ interface MenuOverlayProps {
   onClose: () => void;
   activeBatchId: string | null;
   onChecklistComplete: (id: string) => void;
+  canInstall?: boolean;
+  onInstall?: () => void;
 }
 
 const STORAGE_KEY_CHECKLIST_PREFIX = 'jicv_acid_checklist_';
 
-const MenuOverlay: React.FC<MenuOverlayProps> = ({ isOpen, onClose, activeBatchId, onChecklistComplete }) => {
+const MenuOverlay: React.FC<MenuOverlayProps> = ({ 
+  isOpen, 
+  onClose, 
+  activeBatchId, 
+  onChecklistComplete,
+  canInstall,
+  onInstall
+}) => {
   const [activeTab, setActiveTab] = useState<'checklist' | 'safety' | 'emergency'>('checklist');
   const [checkedItems, setCheckedItems] = useState<boolean[]>(new Array(CHECKLIST_ITEMS.length).fill(false));
   const [isSaved, setIsSaved] = useState(false);
 
   const allChecked = useMemo(() => checkedItems.every(item => item === true), [checkedItems]);
 
-  // Load trạng thái checklist cho mẻ đang hoạt động
   useEffect(() => {
     if (isOpen && activeBatchId) {
       const saved = localStorage.getItem(STORAGE_KEY_CHECKLIST_PREFIX + activeBatchId);
@@ -163,9 +171,16 @@ const MenuOverlay: React.FC<MenuOverlayProps> = ({ isOpen, onClose, activeBatchI
           )}
         </div>
 
-        <div className="p-6 border-t border-slate-100 bg-slate-50">
-          <p className="text-[10px] text-slate-400 text-center font-bold tracking-widest uppercase">Hỗ trợ bởi Google Gemini</p>
-        </div>
+        {canInstall && (
+          <div className="p-4 bg-slate-50 border-t border-slate-100">
+            <button 
+              onClick={onInstall}
+              className="w-full bg-slate-800 text-white text-[10px] font-black py-3 rounded-xl shadow-sm active:scale-95 uppercase"
+            >
+              Cài đặt App vào điện thoại
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

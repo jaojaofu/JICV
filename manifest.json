@@ -1,0 +1,18 @@
+
+{
+  "short_name": "JICV Axit",
+  "name": "JICV Axit 6% - H2SO4 Calculator",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/179/179386.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#ef4a2c",
+  "background_color": "#f3f0f5"
+}
