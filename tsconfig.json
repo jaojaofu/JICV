@@ -15,8 +15,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-dynamic"
+    "jsx": "react-jsx"
   },
-  "include": ["src", "./*.ts", "./*.tsx"],
+  "include": ["./*.ts", "./*.tsx", "components/**/*.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
