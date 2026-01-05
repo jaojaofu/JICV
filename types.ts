@@ -1,4 +1,6 @@
 
+export type Language = 'vi' | 'ja';
+
 export interface CalculationResult {
   id: string;
   timestamp: number;
