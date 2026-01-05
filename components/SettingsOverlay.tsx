@@ -153,13 +153,13 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
 
             <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
               <p className="text-[10px] text-blue-700 font-bold uppercase mb-1">Phiên bản</p>
-              <p className="text-xs text-blue-900 font-medium italic">Build 1.3.1-STABLE</p>
+              <p className="text-xs text-blue-900 font-medium italic">Build 05.01.26</p>
             </div>
           </section>
 
           <section className="pt-8 border-t border-slate-100 text-center">
-            <p className="text-[10px] text-slate-300 uppercase tracking-widest">Designed for JICV Operations</p>
-            <p className="text-[10px] text-slate-300">© 2024 JICV-IT Department</p>
+            <p className="text-[10px] text-slate-300 uppercase tracking-widest">Designed for JICV</p>
+            <p className="text-[10px] text-slate-300">© 2026 JICV-QC Department</p>
           </section>
         </div>
       </div>
