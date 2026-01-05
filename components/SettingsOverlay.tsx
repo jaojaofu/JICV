@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS, APP_STORAGE_KEY, NOTIF_STORAGE_KEY } from '../constants';
 
@@ -15,6 +15,12 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
   const [swActive, setSwActive] = useState(!!navigator.serviceWorker.controller);
+  const testAudio = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    testAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3');
+    testAudio.current.loop = true;
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -23,10 +29,14 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
       setPermissionStatus(currentPermission);
       setNotifEnabled(savedPref && currentPermission === 'granted');
       setSwActive(!!navigator.serviceWorker.controller);
+    } else {
+      if (testAudio.current) {
+        testAudio.current.pause();
+        testAudio.current.currentTime = 0;
+      }
     }
   }, [isOpen]);
 
-  // Hàm ép kích hoạt SW
   const forceActivateSW = async () => {
     if ('serviceWorker' in navigator) {
       try {
@@ -36,7 +46,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
           alert("Đang làm mới hệ thống...");
           window.location.reload();
         } else {
-          await navigator.serviceWorker.register('/sw.js?v=9');
+          await navigator.serviceWorker.register('/sw.js?v=10');
           alert("Đã đăng ký lại. Đang khởi động...");
           window.location.reload();
         }
@@ -53,7 +63,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
     }
 
     if (Notification.permission !== "granted") {
-      alert("Quyền hiện tại: " + Notification.permission + ". Vui lòng nhấn 'Bật thông báo' trước.");
+      alert("Vui lòng nhấn 'Bật thông báo' trước.");
       return;
     }
 
@@ -61,23 +71,23 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
       const registration = await navigator.serviceWorker.ready;
       
       const options = {
-        body: lang === 'vi' ? "Nếu bạn thấy dòng này, hệ thống đã hoạt động!" : "この通知が見えれば、システムは正常です。",
+        body: "TEST CHUÔNG DÀI: Đang rung mạnh & hú còi...",
         icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
         badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
-        vibrate: [500, 110, 500, 110, 450, 110, 200],
-        tag: 'test-direct-' + Date.now(),
+        vibrate: [1000, 500, 1000, 500, 1000, 500, 1000],
+        tag: 'jicv-acid-critical',
+        renotify: true,
         requireInteraction: true,
       };
 
-      // Thử mọi cách để hiện thông báo
-      await registration.showNotification("JICV AXIT: THÔNG BÁO THỬ", options as any);
+      if (testAudio.current) {
+        testAudio.current.play().catch(e => console.log("Audio block"));
+      }
+
+      await registration.showNotification("JICV AXIT: CHUÔNG BÁO THỬ", options as any);
       
       if (navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'TRIGGER_NOTIF',
-          title: "SW: HỆ THỐNG ĐÃ KÍCH HOẠT",
-          options
-        });
+        navigator.serviceWorker.controller.postMessage({ type: 'TRIGGER_NOTIF', title: "JICV AXIT: CHUÔNG BÁO THỬ", options });
       }
     } catch (err) {
       alert("Lỗi Android: " + err);
@@ -101,7 +111,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
     } else {
       setNotifEnabled(false);
       localStorage.setItem(NOTIF_STORAGE_KEY, 'false');
-      alert("Thông báo đang bị: " + permission + ". Hãy vào Cài đặt Android -> Chrome -> Thông báo để mở.");
+      alert("Quyền bị chặn.");
     }
   };
 
@@ -161,40 +171,33 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
                 onClick={testNotification}
                 className="w-full py-4 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
               >
-                Gửi thông báo thử
+                Gửi thông báo thử (Kèm còi hú)
               </button>
             )}
 
-            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-              <p className="text-[9px] text-slate-500 font-bold uppercase">Trạng thái kỹ thuật:</p>
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] text-slate-400 font-bold uppercase">• Quyền hệ thống:</span>
-                <span className={`text-[9px] font-black ${permissionStatus === 'granted' ? 'text-green-600' : 'text-red-500'}`}>{permissionStatus.toUpperCase()}</span>
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3 text-[9px]">
+              <div className="flex justify-between font-bold">
+                <span className="text-slate-400">QUYỀN: {permissionStatus.toUpperCase()}</span>
+                <span className={swActive ? 'text-green-600' : 'text-red-500'}>{swActive ? 'ĐÃ KÍCH HOẠT SW' : 'CHƯA KÍCH HOẠT SW'}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] text-slate-400 font-bold uppercase">• Hệ thống lõi (SW):</span>
-                <span className={`text-[9px] font-black ${swActive ? 'text-green-600' : 'text-red-500'}`}>{swActive ? 'ĐANG ĐIỀU KHIỂN' : 'CHƯA KÍCH HOẠT'}</span>
-              </div>
-              
               {!swActive && (
-                <button 
-                  onClick={forceActivateSW}
-                  className="w-full mt-2 py-2 bg-[#ef4a2c] text-white text-[9px] font-black rounded-lg uppercase animate-pulse"
-                >
-                  Nhấn để kích hoạt ngay
-                </button>
+                <button onClick={forceActivateSW} className="w-full py-2 bg-[#ef4a2c] text-white font-black rounded uppercase">Kích hoạt ngay</button>
               )}
             </div>
           </section>
 
           <section className="space-y-4">
-            <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Hệ thống</h3>
-            <button onClick={() => { if (confirm("Xóa toàn bộ dữ liệu?")) { localStorage.clear(); window.location.reload(); } }} className="w-full p-4 bg-red-50 rounded-2xl text-red-600 flex items-center space-x-3 hover:bg-red-100 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              <span className="text-xs font-black uppercase">Xóa lịch sử</span>
+            <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Mẹo Android</h3>
+            <div className="bg-blue-50 p-4 rounded-xl text-[9px] text-blue-700 leading-relaxed font-bold">
+              Để chuông hệ thống dài hơn nữa, hãy vào:<br/>
+              <span className="text-black underline">Cài đặt máy -> Thông báo -> Chrome -> JICV Axit -> Kiểu âm thanh</span><br/>
+              và chọn một bản nhạc dài thay vì tiếng "Ting" ngắn.
+            </div>
+            <button onClick={() => { if (confirm("Xóa lịch sử?")) { localStorage.clear(); window.location.reload(); } }} className="w-full p-4 bg-red-50 rounded-2xl text-red-600 flex items-center justify-center space-x-3">
+              <span className="text-xs font-black uppercase">Xóa dữ liệu App</span>
             </button>
             <div className="text-center pt-4">
-              <p className="text-[8px] text-slate-300 uppercase font-black">JICV-QC Department • Build 1.3.9-FINAL</p>
+              <p className="text-[8px] text-slate-300 uppercase font-black">Build 1.4.0-SOUND-FIX</p>
             </div>
           </section>
         </div>

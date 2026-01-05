@@ -1,29 +1,14 @@
 
-const CACHE_NAME = 'jicv-axit-v9';
+const CACHE_NAME = 'jicv-axit-v10';
 
 self.addEventListener('install', (event) => {
-  // Buộc SW đang chờ trở thành SW đang hoạt động ngay lập tức
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  // Chiếm quyền điều khiển tất cả các client (tab) ngay khi kích hoạt
-  event.waitUntil(
-    Promise.all([
-      self.clients.claim(),
-      // Dọn dẹp cache cũ
-      caches.keys().then((cacheNames) => {
-        return Promise.all(
-          cacheNames.map((cache) => {
-            if (cache !== CACHE_NAME) return caches.delete(cache);
-          })
-        );
-      })
-    ])
-  );
+  event.waitUntil(self.clients.claim());
 });
 
-// Lắng nghe tin nhắn hiển thị thông báo
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'TRIGGER_NOTIF') {
     const { title, options } = event.data;
@@ -31,7 +16,11 @@ self.addEventListener('message', (event) => {
       self.registration.showNotification(title, {
         ...options,
         badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
-        tag: 'jicv-acid-alert'
+        // Kiểu rung cực mạnh: Rung 1s, nghỉ 0.5s, lặp lại 3 lần
+        vibrate: [1000, 500, 1000, 500, 1000, 500, 1000],
+        tag: 'jicv-acid-critical',
+        renotify: true,
+        requireInteraction: true // Thông báo sẽ không tự biến mất cho đến khi nhấn vào
       })
     );
   }

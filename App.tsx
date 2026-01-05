@@ -24,6 +24,13 @@ const App: React.FC = () => {
   const t = TRANSLATIONS[lang];
   const alertInterval = useRef<number | null>(null);
   const hasNotified = useRef<string | null>(null);
+  const alarmAudio = useRef<HTMLAudioElement | null>(null);
+
+  // Khởi tạo audio báo động
+  useEffect(() => {
+    alarmAudio.current = new Audio('https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3'); // Âm thanh còi báo động
+    alarmAudio.current.loop = true;
+  }, []);
 
   useEffect(() => {
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -40,14 +47,17 @@ const App: React.FC = () => {
           setActiveBatchId(parsed[0].id);
         }
       } catch (e) { 
-        console.error("Lỗi khi load lịch sử:", e); 
+        console.error("Error loading history:", e); 
       }
     }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(LANG_STORAGE_KEY, lang);
-  }, [lang]);
+  const stopAlarm = useCallback(() => {
+    if (alarmAudio.current) {
+      alarmAudio.current.pause();
+      alarmAudio.current.currentTime = 0;
+    }
+  }, []);
 
   const triggerSystemNotification = useCallback(async () => {
     const notifEnabledPref = localStorage.getItem(NOTIF_STORAGE_KEY) === 'true';
@@ -60,24 +70,25 @@ const App: React.FC = () => {
           body: t.notif_body,
           icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
           badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
-          tag: 'jicv-acid-alert',
+          tag: 'jicv-acid-critical',
           renotify: true,
-          vibrate: [200, 100, 200],
+          vibrate: [1000, 500, 1000, 500, 1000, 500, 1000],
           requireInteraction: true
         };
 
+        // Phát âm thanh nếu app đang mở
+        if (alarmAudio.current) {
+          alarmAudio.current.play().catch(e => console.log("Audio block by browser"));
+        }
+
         const sw = navigator.serviceWorker.controller || registration.active;
         if (sw) {
-          sw.postMessage({
-            type: 'TRIGGER_NOTIF',
-            title: t.notif_title,
-            options
-          });
+          sw.postMessage({ type: 'TRIGGER_NOTIF', title: t.notif_title, options });
         } else {
           registration.showNotification(t.notif_title, options as any);
         }
       } catch (err) {
-        console.error("Lỗi gửi thông báo:", err);
+        console.error("Notif error:", err);
       }
     }
   }, [t]);
@@ -101,9 +112,10 @@ const App: React.FC = () => {
       if (alertInterval.current) clearInterval(alertInterval.current);
       setShowAlert(false);
       hasNotified.current = null;
+      stopAlarm();
     }
     return () => { if (alertInterval.current) clearInterval(alertInterval.current); };
-  }, [activeBatchId, history, triggerSystemNotification]);
+  }, [activeBatchId, history, triggerSystemNotification, stopAlarm]);
 
   const saveCalculation = useCallback((result: CalculationResult) => {
     setHistory(prev => {
@@ -114,7 +126,8 @@ const App: React.FC = () => {
     setActiveBatchId(result.id);
     setShowAlert(false);
     hasNotified.current = null;
-  }, []);
+    stopAlarm();
+  }, [stopAlarm]);
 
   const markChecklistDone = useCallback((id: string) => {
     setHistory(prev => {
@@ -127,7 +140,8 @@ const App: React.FC = () => {
     setActiveBatchId(null);
     setShowAlert(false);
     hasNotified.current = null;
-  }, []);
+    stopAlarm();
+  }, [stopAlarm]);
 
   const deleteRecord = useCallback((id: string) => {
     setHistory(prev => {
@@ -138,8 +152,9 @@ const App: React.FC = () => {
     if (activeBatchId === id) {
       setActiveBatchId(null);
       hasNotified.current = null;
+      stopAlarm();
     }
-  }, [activeBatchId]);
+  }, [activeBatchId, stopAlarm]);
 
   const handleInstallClick = useCallback(async () => {
     if (!deferredPrompt) return;
@@ -151,8 +166,9 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f3f0f5] flex flex-col font-sans max-w-md mx-auto shadow-2xl relative overflow-x-hidden safe-padding-bottom">
       {showAlert && (
-        <div className="bg-red-600 text-white p-3 text-center text-[10px] font-bold animate-pulse z-40 sticky top-0 shadow-lg safe-padding-top">
-          {t.alert_unfinished}
+        <div className="bg-red-600 text-white p-3 text-center text-[10px] font-bold animate-pulse z-40 sticky top-0 shadow-lg safe-padding-top flex flex-col items-center">
+          <span>{t.alert_unfinished}</span>
+          <button onClick={stopAlarm} className="mt-1 bg-white text-red-600 px-4 py-1 rounded-full text-[8px] font-black uppercase">Tắt chuông báo</button>
         </div>
       )}
 
@@ -199,6 +215,7 @@ const App: React.FC = () => {
                     localStorage.removeItem(APP_STORAGE_KEY);
                     setActiveBatchId(null);
                     hasNotified.current = null;
+                    stopAlarm();
                   }
                 }} 
               />
