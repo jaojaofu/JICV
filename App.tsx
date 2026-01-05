@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CalculationResult, Language } from './types';
 import { APP_STORAGE_KEY, LANG_STORAGE_KEY, TRANSLATIONS } from './constants';
@@ -107,18 +106,18 @@ const App: React.FC = () => {
   }, [activeBatchId]);
 
   return (
-    <div className="min-h-screen bg-[#f3f0f5] flex flex-col font-sans max-w-md mx-auto shadow-2xl relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#f3f0f5] flex flex-col font-sans max-w-md mx-auto shadow-2xl relative overflow-x-hidden safe-padding-bottom">
       {showAlert && (
-        <div className="bg-red-600 text-white p-3 text-center text-[10px] font-bold animate-pulse z-40 sticky top-0 shadow-lg">
+        <div className="bg-red-600 text-white p-3 text-center text-[10px] font-bold animate-pulse z-40 sticky top-0 shadow-lg safe-padding-top">
           {t.alert_unfinished}
         </div>
       )}
 
-      <header className="bg-[#ef4a2c] pt-8 pb-6 text-center shadow-md relative">
+      <header className={`bg-[#ef4a2c] pb-6 text-center shadow-md relative ${!showAlert ? 'safe-padding-top pt-8' : 'pt-4'}`}>
         {/* Settings Icon Left */}
         <button 
           onClick={() => setIsSettingsOpen(true)}
-          className="absolute left-4 top-8 p-2 text-white/90 hover:text-white transition-colors"
+          className="absolute left-4 bottom-6 p-2 text-white/90 hover:text-white transition-colors"
         >
           <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -129,7 +128,7 @@ const App: React.FC = () => {
         {/* Menu Icon Right */}
         <button 
           onClick={() => setIsMenuOpen(true)}
-          className="absolute right-4 top-8 p-2 text-white/90 hover:text-white transition-colors"
+          className="absolute right-4 bottom-6 p-2 text-white/90 hover:text-white transition-colors"
         >
           <div className="relative">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +182,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="p-4 text-center text-[10px] text-slate-400 uppercase tracking-widest">
+      <footer className="p-4 text-center text-[10px] text-slate-400 uppercase tracking-widest mb-2">
         {t.system_ver}
       </footer>
 
