@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'jicv-axit-v6';
+const CACHE_NAME = 'jicv-axit-v7';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -27,6 +27,7 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
+  // Quan trọng: Nắm quyền điều khiển tất cả các tab ngay lập tức
   self.clients.claim();
 });
 
@@ -38,10 +39,12 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Lắng nghe tin nhắn từ App để hiển thị thông báo
+// Trình lắng nghe tin nhắn để hiển thị thông báo
 self.addEventListener('message', (event) => {
+  console.log('SW received message:', event.data);
   if (event.data && event.data.type === 'TRIGGER_NOTIF') {
     const { title, options } = event.data;
+    // Sử dụng self.registration để đảm bảo quyền hiển thị
     self.registration.showNotification(title, options);
   }
 });

@@ -22,41 +22,54 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
       const currentPermission = ("Notification" in window) ? Notification.permission : 'default';
       setPermissionStatus(currentPermission);
       setNotifEnabled(savedPref && currentPermission === 'granted');
-      
-      // Kiểm tra xem có đang chạy ở chế độ PWA (Standalone) không - quan trọng cho iOS
       setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true);
     }
   }, [isOpen]);
 
   const testNotification = async () => {
-    if (Notification.permission === "granted") {
-      try {
-        const registration = await navigator.serviceWorker.ready;
-        const sw = registration.active || navigator.serviceWorker.controller;
-        
-        const options = {
-          body: lang === 'vi' ? "Thông báo thử nghiệm thành công! Hệ thống JICV đã sẵn sàng." : "テスト通知成功！JICVシステムは準備完了です。",
-          icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
-          badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
-          vibrate: [200, 100, 200],
-          requireInteraction: true
-        };
+    if (!("Notification" in window)) {
+      alert("Trình duyệt không hỗ trợ thông báo.");
+      return;
+    }
 
-        if (sw) {
-          sw.postMessage({
-            type: 'TRIGGER_NOTIF',
-            title: t.notif_title,
-            options
-          });
-        } else {
-          registration.showNotification(t.notif_title, options as any);
-        }
-      } catch (err) {
-        console.error("Lỗi test notif:", err);
-        alert(lang === 'vi' ? "Lỗi: Hãy load lại trang để Service Worker kích hoạt." : "エラー：ページをリロードしてください。");
+    if (Notification.permission !== "granted") {
+      alert(lang === 'vi' ? "Vui lòng cấp quyền thông báo trước!" : "先に通知権限を許可してください！");
+      return;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      if (!registration) {
+        alert("Service Worker chưa sẵn sàng. Hãy thử tải lại trang.");
+        return;
       }
-    } else {
-      alert(lang === 'vi' ? "Bạn chưa cấp quyền thông báo!" : "通知権限が許可されていません！");
+
+      const options = {
+        body: lang === 'vi' ? "Thông báo thử nghiệm thành công! Hệ thống JICV đã sẵn sàng." : "テスト通知成功！JICVシステムは準備完了です。",
+        icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
+        badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
+        vibrate: [200, 100, 200],
+        requireInteraction: true,
+        tag: 'test-notif'
+      };
+
+      // Thử gửi qua postMessage (tốt nhất cho Mobile chạy ngầm)
+      const sw = navigator.serviceWorker.controller || registration.active;
+      if (sw) {
+        sw.postMessage({
+          type: 'TRIGGER_NOTIF',
+          title: t.notif_title,
+          options
+        });
+        console.log("Message sent to SW");
+      } else {
+        // Nếu không tìm thấy controller, dùng lệnh trực tiếp
+        await registration.showNotification(t.notif_title, options as any);
+        console.log("Notification shown directly via registration");
+      }
+    } catch (err) {
+      console.error("Lỗi test notif:", err);
+      alert("Lỗi khi gửi thông báo: " + err);
     }
   };
 
@@ -73,10 +86,11 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
       if (permission === "granted") {
         setNotifEnabled(true);
         localStorage.setItem(NOTIF_STORAGE_KEY, 'true');
-        setTimeout(testNotification, 500);
+        alert(lang === 'vi' ? "Đã cấp quyền! Đang thử gửi thông báo..." : "許可されました！通知をテスト中...");
+        setTimeout(testNotification, 800);
       } else if (permission === "denied") {
         alert(lang === 'vi' 
-          ? "Thông báo bị CHẶN. Vui lòng vào Cài đặt -> Quyền trang web để mở lại." 
+          ? "Bạn đã chặn thông báo. Hãy vào Cài đặt trình duyệt/điện thoại để mở lại." 
           : "通知がブロックされています。設定から許可してください。");
         setNotifEnabled(false);
         localStorage.setItem(NOTIF_STORAGE_KEY, 'false');
@@ -127,8 +141,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
               <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 mb-4">
                 <p className="text-[10px] text-orange-700 font-bold uppercase leading-tight">
                   {lang === 'vi' 
-                    ? "Lưu ý cho iPhone: Bạn PHẢI dùng tính năng 'Thêm vào màn hình chính' mới nhận được thông báo." 
-                    : "iPhoneの注意：『ホーム画面に追加』を使用しないと通知を受け取れません。"}
+                    ? "iPhone: Bạn PHẢI dùng 'Thêm vào MH chính' mới nhận được thông báo." 
+                    : "iPhone: 『ホーム画面に追加』を使用して通知を有効にしてください。"}
                 </p>
               </div>
             )}
@@ -163,7 +177,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
             )}
             
             {permissionStatus === 'denied' && (
-              <p className="text-[9px] text-red-500 italic leading-tight">* Cảnh báo: Quyền thông báo đang bị chặn trong cài đặt máy.</p>
+              <p className="text-[9px] text-red-500 italic leading-tight">* Cảnh báo: Quyền thông báo đang bị chặn.</p>
             )}
           </section>
 
@@ -179,13 +193,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
             </button>
             <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
               <p className="text-[10px] text-blue-700 font-bold uppercase mb-1">Phiên bản</p>
-              <p className="text-xs text-blue-900 font-medium italic">Build 1.3.3-PWA-MODE</p>
+              <p className="text-xs text-blue-900 font-medium italic">Build 1.3.4-STABLE</p>
             </div>
-          </section>
-
-          <section className="pt-8 border-t border-slate-100 text-center">
-            <p className="text-[10px] text-slate-300 uppercase tracking-widest">Designed for JICV Operations</p>
-            <p className="text-[10px] text-slate-300">© 2026 JICV-QC Department</p>
           </section>
         </div>
       </div>
