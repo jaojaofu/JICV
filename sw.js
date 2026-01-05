@@ -1,51 +1,27 @@
 
-const CACHE_NAME = 'jicv-axit-v7';
-const ASSETS = [
-  './index.html',
-  './manifest.json',
-  'https://cdn.tailwindcss.com'
-];
+const CACHE_NAME = 'jicv-axit-v8';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
-    })
-  );
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
-  // Quan trọng: Nắm quyền điều khiển tất cả các tab ngay lập tức
-  self.clients.claim();
+  event.waitUntil(clients.claim());
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
-});
-
-// Trình lắng nghe tin nhắn để hiển thị thông báo
+// Lắng nghe tin nhắn hiển thị thông báo
 self.addEventListener('message', (event) => {
-  console.log('SW received message:', event.data);
   if (event.data && event.data.type === 'TRIGGER_NOTIF') {
     const { title, options } = event.data;
-    // Sử dụng self.registration để đảm bảo quyền hiển thị
-    self.registration.showNotification(title, options);
+    // Đảm bảo dùng self.registration để hiển thị
+    event.waitUntil(
+      self.registration.showNotification(title, {
+        ...options,
+        // Cần thiết cho Android để hiển thị nổi bật
+        badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
+        tag: 'jicv-acid-alert'
+      })
+    );
   }
 });
 

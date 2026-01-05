@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -8,7 +9,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="JICV Axit">
     
-    <!-- CẬP NHẬT ICON MỚI -->
     <link rel="icon" type="image/png" href="https://i.postimg.cc/kGy3M7x6/icon2.png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/kGy3M7x6/icon2.png">
     
@@ -22,8 +22,6 @@
         :root {
             --sat: env(safe-area-inset-top);
             --sab: env(safe-area-inset-bottom);
-            --sal: env(safe-area-inset-left);
-            --sar: env(safe-area-inset-right);
         }
         body {
             font-family: 'Roboto', sans-serif;
@@ -32,21 +30,11 @@
             padding: 0;
             overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: contain;
         }
-        .safe-padding-top {
-            padding-top: var(--sat);
-        }
-        .safe-padding-bottom {
-            padding-bottom: var(--sab);
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
+        .safe-padding-top { padding-top: var(--sat); }
+        .safe-padding-bottom { padding-bottom: var(--sab); }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
         }
     </style>
 <script type="importmap">
@@ -68,10 +56,11 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(reg => {
-                    console.log('SW registered');
-                }).catch(err => {
-                    console.log('SW failed', err);
+                // Đăng ký lại với chuỗi truy vấn để phá cache trên Android
+                navigator.serviceWorker.register('/sw.js?v=8').then(reg => {
+                    console.log('SW registered v8');
+                    // Buộc SW cập nhật ngay lập tức
+                    reg.update();
                 });
             });
         }
