@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CalculationResult, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
@@ -10,8 +10,54 @@ interface HistoryProps {
   lang: Language;
 }
 
+const CHECKLIST_TIMEOUT_MS = 30 * 60 * 1000;
+
+// Sub-component to handle per-item countdown logic
+const CountdownTimer: React.FC<{ timestamp: number; lang: Language }> = ({ timestamp, lang }) => {
+  const t = TRANSLATIONS[lang];
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    return Math.max(0, (timestamp + CHECKLIST_TIMEOUT_MS) - Date.now());
+  });
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+
+    const interval = setInterval(() => {
+      const remaining = (timestamp + CHECKLIST_TIMEOUT_MS) - Date.now();
+      if (remaining <= 0) {
+        setTimeLeft(0);
+        clearInterval(interval);
+      } else {
+        setTimeLeft(remaining);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timestamp, timeLeft]);
+
+  const minutes = Math.floor(timeLeft / 60000);
+  const seconds = Math.floor((timeLeft % 60000) / 1000);
+
+  if (timeLeft <= 0) {
+    return (
+      <span className="text-red-600 font-black text-[9px] uppercase animate-pulse">
+        {t.overdue}!!
+      </span>
+    );
+  }
+
+  const isWarning = timeLeft < 10 * 60 * 1000; // Less than 10 mins
+
+  return (
+    <span className={`font-mono font-bold text-[10px] ${isWarning ? 'text-orange-500' : 'text-blue-600'}`}>
+      {t.time_remaining}: {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')}
+    </span>
+  );
+};
+
 const History: React.FC<HistoryProps> = ({ history, onDelete, onClear, lang }) => {
   const t = TRANSLATIONS[lang];
+  
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center px-2">
@@ -32,11 +78,18 @@ const History: React.FC<HistoryProps> = ({ history, onDelete, onClear, lang }) =
             
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <div className="text-[9px] text-slate-400 mb-1 flex items-center">
-                  <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  {new Date(item.timestamp).toLocaleString(lang === 'vi' ? 'vi-VN' : 'ja-JP')}
+                <div className="text-[9px] text-slate-400 mb-1 flex items-center justify-between pr-4">
+                  <div className="flex items-center">
+                    <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {new Date(item.timestamp).toLocaleString(lang === 'vi' ? 'vi-VN' : 'ja-JP')}
+                  </div>
+                  
+                  {/* Countdown Logic here */}
+                  {!item.checklistCompleted && (
+                    <CountdownTimer timestamp={item.timestamp} lang={lang} />
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-2">
