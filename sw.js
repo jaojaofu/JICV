@@ -1,3 +1,4 @@
+
 const CACHE_NAME = 'jicv-axit-v5';
 const ASSETS = [
   './index.html',
@@ -34,6 +35,25 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);
+    })
+  );
+});
+
+// Xử lý khi người dùng nhấn vào thông báo
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) {
+            client = clientList[i];
+          }
+        }
+        return client.focus();
+      }
+      return clients.openWindow('/');
     })
   );
 });
