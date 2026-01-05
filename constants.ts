@@ -3,6 +3,7 @@ import { Language } from './types';
 
 export const APP_STORAGE_KEY = 'h2so4_calc_history';
 export const LANG_STORAGE_KEY = 'jicv_acid_lang';
+export const NOTIF_STORAGE_KEY = 'jicv_acid_notif_enabled';
 
 export const TRANSLATIONS = {
   vi: {
@@ -26,6 +27,11 @@ export const TRANSLATIONS = {
     not_checked: "Chưa Check",
     checklist_done_at: "Checklist xong lúc",
     alert_unfinished: "⚠️ CẢNH BÁO: MẺ PHA CHƯA HOÀN THÀNH CHECK LIST (>30P)",
+    notif_title: "CẢNH BÁO JICV AXIT",
+    notif_body: "Mẻ pha đã quá 30 phút nhưng chưa hoàn thành Checklist an toàn!",
+    enable_notif: "Thông báo hệ thống",
+    notif_on: "Đã bật",
+    notif_off: "Đã tắt",
     input_placeholder: "Nhập 1 - 175 (cm)",
     error_nan: "Vui lòng nhập số hợp lệ",
     error_low: "CÒN AXIT MÀ PHA CÁI GÌ",
@@ -40,7 +46,14 @@ export const TRANSLATIONS = {
     reset_checklist: "Làm mới",
     confirm_reset_checklist: "Bạn muốn làm mới toàn bộ checklist?",
     install_app: "Cài đặt App vào điện thoại",
-    system_ver: "HỆ THỐNG VẬN HÀNH JICV - BẢN 1.2",
+    system_ver: "HỆ THỐNG VẬN HÀNH JICV - BẢN 1.3",
+    checklist_guide_title: "HƯỚNG DẪN LÀM CHECKLIST",
+    checklist_guide_steps: [
+      { title: "Bước 1: Tính toán", content: "Sau khi nhấn 'Tính Toán', hệ thống sẽ bắt đầu đếm ngược 30 phút cảnh báo." },
+      { title: "Bước 2: Kiểm tra thực tế", content: "Thực hiện kiểm tra PPE và thiết bị theo đúng 5 đầu mục liệt kê bên dưới." },
+      { title: "Bước 3: Tích chọn", content: "Chỉ tích chọn khi bạn đã thực sự hoàn thành bước đó tại khu vực sản xuất." },
+      { title: "Bước 4: Xác nhận", content: "Nhấn 'Lưu hoàn thành' để hệ thống ghi nhận thời gian và tắt cảnh báo đỏ." }
+    ],
     safety_rules_title: "Nguyên tắc an toàn hóa chất",
     emergency_title: "Xử lý sự cố khẩn cấp",
     safety_rules: [
@@ -81,6 +94,11 @@ export const TRANSLATIONS = {
     not_checked: "未確認",
     checklist_done_at: "完了時刻",
     alert_unfinished: "⚠️ 警告：チェックリストが未完了です（30分経過）",
+    notif_title: "JICV硫酸アラート",
+    notif_body: "30分経過しましたが、安全チェックが完了していません！",
+    enable_notif: "システム通知",
+    notif_on: "オン",
+    notif_off: "オフ",
     input_placeholder: "1 - 175 (cm) 入力",
     error_nan: "有効な数値を入力してください",
     error_low: "硫酸が不足しています",
@@ -95,7 +113,14 @@ export const TRANSLATIONS = {
     reset_checklist: "リセット",
     confirm_reset_checklist: "チェックリストをリセットしますか？",
     install_app: "アプリをインストール",
-    system_ver: "JICV運用システム - Ver 1.2",
+    system_ver: "JICV運用システム - Ver 1.3",
+    checklist_guide_title: "チェックリスト使用ガイド",
+    checklist_guide_steps: [
+      { title: "ステップ1: 計算", content: "計算実行後、30分のアラームカウントダウンが始まります。" },
+      { title: "ステップ2: 現場確認", content: "PPEと設備の状態を、以下の5項目に従って確認してください。" },
+      { title: "ステップ3: チェック", content: "項目が完了するごとに、チェックボックスを選択してください。" },
+      { title: "ステップ4: 保存", content: "「保存して完了」を押すと、履歴が記録されアラートが止まります。" }
+    ],
     safety_rules_title: "化学物質安全原則",
     emergency_title: "緊急時の対応",
     safety_rules: [

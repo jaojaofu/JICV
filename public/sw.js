@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jicv-axit-v4';
+const CACHE_NAME = 'jicv-axit-v5';
 const ASSETS = [
   '/',
   '/index.html',

@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Language } from '../types';
-import { TRANSLATIONS, APP_STORAGE_KEY } from '../constants';
+import { TRANSLATIONS, APP_STORAGE_KEY, NOTIF_STORAGE_KEY } from '../constants';
 
 interface SettingsOverlayProps {
   isOpen: boolean;
@@ -12,6 +12,53 @@ interface SettingsOverlayProps {
 
 const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang, setLang }) => {
   const t = TRANSLATIONS[lang];
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+
+  // Khởi tạo trạng thái dựa trên localStorage và quyền trình duyệt thực tế
+  useEffect(() => {
+    if (isOpen) {
+      const savedPref = localStorage.getItem(NOTIF_STORAGE_KEY) === 'true';
+      const currentPermission = ("Notification" in window) ? Notification.permission : 'default';
+      
+      setPermissionStatus(currentPermission);
+      // Chỉ bật toggle nếu cả 2 điều kiện: user muốn bật VÀ trình duyệt cho phép
+      setNotifEnabled(savedPref && currentPermission === 'granted');
+    }
+  }, [isOpen]);
+
+  const toggleNotifications = async () => {
+    if (!("Notification" in window)) {
+      alert(lang === 'vi' ? "Trình duyệt này không hỗ trợ thông báo hệ thống." : "このブラウザは通知をサポートしていません。");
+      return;
+    }
+
+    if (!notifEnabled) {
+      // Trường hợp muốn BẬT
+      const permission = await Notification.requestPermission();
+      setPermissionStatus(permission);
+
+      if (permission === "granted") {
+        setNotifEnabled(true);
+        localStorage.setItem(NOTIF_STORAGE_KEY, 'true');
+        // Test thông báo ngay để user biết đã thành công
+        new Notification(t.notif_title, {
+          body: lang === 'vi' ? "Thông báo hệ thống đã được kích hoạt!" : "通知が有効になりました！",
+          icon: 'https://i.postimg.cc/9Q88BDWv/icon.png'
+        });
+      } else if (permission === "denied") {
+        alert(lang === 'vi' 
+          ? "Thông báo đang bị CHẶN trong cài đặt trình duyệt. Vui lòng vào Cài đặt -> Quyền trang web -> Thông báo -> Chọn 'Cho phép' để sử dụng tính năng này." 
+          : "通知がブロックされています。ブラウザの設定から通知を許可してください。");
+        setNotifEnabled(false);
+        localStorage.setItem(NOTIF_STORAGE_KEY, 'false');
+      }
+    } else {
+      // Trường hợp muốn TẮT
+      setNotifEnabled(false);
+      localStorage.setItem(NOTIF_STORAGE_KEY, 'false');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -52,6 +99,38 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
             </div>
           </section>
 
+          {/* System Notifications Toggle */}
+          <section>
+            <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">{t.enable_notif}</h3>
+            <button 
+              onClick={toggleNotifications}
+              className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${notifEnabled ? 'border-green-500 bg-green-50' : 'border-slate-100 bg-slate-50'} ${permissionStatus === 'denied' && !notifEnabled ? 'opacity-70' : ''}`}
+            >
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 rounded-lg ${notifEnabled ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                </div>
+                <div className="text-left">
+                  <p className={`text-sm font-bold ${notifEnabled ? 'text-green-800' : 'text-slate-700'}`}>
+                    {t.enable_notif}
+                    {permissionStatus === 'denied' && <span className="ml-2 text-[8px] text-red-500 font-black uppercase tracking-tighter">(BỊ CHẶN)</span>}
+                  </p>
+                  <p className="text-[10px] text-slate-500">{notifEnabled ? t.notif_on : t.notif_off}</p>
+                </div>
+              </div>
+              <div className={`w-10 h-5 rounded-full relative transition-colors ${notifEnabled ? 'bg-green-500' : 'bg-slate-300'}`}>
+                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${notifEnabled ? 'left-6' : 'left-1'}`} />
+              </div>
+            </button>
+            {permissionStatus === 'denied' && (
+              <p className="mt-2 text-[9px] text-red-500 italic leading-tight">
+                * {lang === 'vi' ? 'Quyền thông báo đang bị chặn. Hãy mở cài đặt trình duyệt để cho phép.' : '通知がブロックされています。設定から許可してください。'}
+              </p>
+            )}
+          </section>
+
           {/* System Settings */}
           <section className="space-y-4">
             <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Hệ thống</h3>
@@ -75,7 +154,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
 
             <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
               <p className="text-[10px] text-blue-700 font-bold uppercase mb-1">Phiên bản</p>
-              <p className="text-xs text-blue-900 font-medium italic">Build 1.2.0-STABLE</p>
+              <p className="text-xs text-blue-900 font-medium italic">Build 1.3.1-STABLE</p>
             </div>
           </section>
 

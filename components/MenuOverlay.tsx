@@ -26,6 +26,7 @@ const MenuOverlay: React.FC<MenuOverlayProps> = ({
 }) => {
   const t = TRANSLATIONS[lang];
   const [activeTab, setActiveTab] = useState<'checklist' | 'safety' | 'emergency'>('checklist');
+  const [showGuide, setShowGuide] = useState(false);
   const [checkedItems, setCheckedItems] = useState<boolean[]>(new Array(t.checklist_items.length).fill(false));
   const [isSaved, setIsSaved] = useState(false);
 
@@ -92,20 +93,45 @@ const MenuOverlay: React.FC<MenuOverlayProps> = ({
         </div>
 
         <div className="flex bg-slate-50 border-b border-slate-200">
-          <button onClick={() => setActiveTab('checklist')} className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTab === 'checklist' ? 'text-[#ef4a2c] border-b-2 border-[#ef4a2c] bg-white' : 'text-slate-400'}`}>{t.tab_checklist}</button>
-          <button onClick={() => setActiveTab('safety')} className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTab === 'safety' ? 'text-[#ef4a2c] border-b-2 border-[#ef4a2c] bg-white' : 'text-slate-400'}`}>{t.tab_safety}</button>
-          <button onClick={() => setActiveTab('emergency')} className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTab === 'emergency' ? 'text-[#ef4a2c] border-b-2 border-[#ef4a2c] bg-white' : 'text-slate-400'}`}>{t.tab_emergency}</button>
+          <button onClick={() => { setActiveTab('checklist'); setShowGuide(false); }} className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTab === 'checklist' ? 'text-[#ef4a2c] border-b-2 border-[#ef4a2c] bg-white' : 'text-slate-400'}`}>{t.tab_checklist}</button>
+          <button onClick={() => { setActiveTab('safety'); setShowGuide(false); }} className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTab === 'safety' ? 'text-[#ef4a2c] border-b-2 border-[#ef4a2c] bg-white' : 'text-slate-400'}`}>{t.tab_safety}</button>
+          <button onClick={() => { setActiveTab('emergency'); setShowGuide(false); }} className={`flex-1 py-4 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeTab === 'emergency' ? 'text-[#ef4a2c] border-b-2 border-[#ef4a2c] bg-white' : 'text-slate-400'}`}>{t.tab_emergency}</button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'checklist' && (
             <div className="space-y-4 animate-in fade-in duration-300 pb-20">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="text-slate-900 font-bold flex items-center text-sm">
-                  {t.tab_checklist}
-                </h3>
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-slate-900 font-bold text-sm uppercase">{t.tab_checklist}</h3>
+                  <button 
+                    onClick={() => setShowGuide(!showGuide)}
+                    className={`p-1 rounded-full transition-colors ${showGuide ? 'bg-[#ef4a2c] text-white' : 'bg-slate-100 text-slate-400'}`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                </div>
                 <button onClick={handleResetChecklist} className="text-[10px] text-slate-400 hover:text-red-500 font-bold uppercase">{t.reset_checklist}</button>
               </div>
+
+              {showGuide && (
+                <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100 mb-6 animate-in slide-in-from-top duration-300">
+                  <h4 className="text-[#ef4a2c] text-[10px] font-black uppercase mb-3 tracking-widest">{t.checklist_guide_title}</h4>
+                  <div className="space-y-4">
+                    {t.checklist_guide_steps.map((step, sidx) => (
+                      <div key={sidx} className="flex space-x-3">
+                        <div className="w-5 h-5 bg-[#ef4a2c] text-white rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold">{sidx + 1}</div>
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-800">{step.title}</p>
+                          <p className="text-[10px] text-slate-600 leading-tight">{step.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {!activeBatchId && (
                 <div className="p-3 bg-blue-50 text-blue-700 text-[9px] font-bold uppercase rounded-lg mb-4 text-center">
@@ -139,7 +165,7 @@ const MenuOverlay: React.FC<MenuOverlayProps> = ({
 
           {activeTab === 'safety' && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <h3 className="text-slate-900 font-bold mb-4 flex items-center text-sm">
+              <h3 className="text-slate-900 font-bold mb-4 flex items-center text-sm uppercase">
                 {t.safety_rules_title}
               </h3>
               {t.safety_rules.map((rule, idx) => (
@@ -153,7 +179,7 @@ const MenuOverlay: React.FC<MenuOverlayProps> = ({
 
           {activeTab === 'emergency' && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <h3 className="text-slate-900 font-bold mb-4 flex items-center text-sm">
+              <h3 className="text-slate-900 font-bold mb-4 flex items-center text-sm uppercase">
                 {t.emergency_title}
               </h3>
               {t.emergency.map((item, idx) => (

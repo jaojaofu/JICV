@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CalculationResult, Language } from './types';
-import { APP_STORAGE_KEY, LANG_STORAGE_KEY, TRANSLATIONS } from './constants';
+import { APP_STORAGE_KEY, LANG_STORAGE_KEY, NOTIF_STORAGE_KEY, TRANSLATIONS } from './constants';
 import Calculator from './components/Calculator';
 import History from './components/History';
 import MenuOverlay from './components/MenuOverlay';
@@ -22,6 +23,7 @@ const App: React.FC = () => {
   
   const t = TRANSLATIONS[lang];
   const alertInterval = useRef<number | null>(null);
+  const hasNotified = useRef<string | null>(null);
 
   useEffect(() => {
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -47,14 +49,23 @@ const App: React.FC = () => {
     localStorage.setItem(LANG_STORAGE_KEY, lang);
   }, [lang]);
 
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
+  const triggerSystemNotification = useCallback(() => {
+    const notifEnabledPref = localStorage.getItem(NOTIF_STORAGE_KEY) === 'true';
+    if (!notifEnabledPref || !("Notification" in window)) return;
+    
+    // Kiểm tra quyền thực tế trước khi gửi
+    if (Notification.permission === "granted") {
+      try {
+        new Notification(t.notif_title, {
+          body: t.notif_body,
+          icon: 'https://i.postimg.cc/9Q88BDWv/icon.png',
+          tag: 'jicv-acid-alert'
+        });
+      } catch (err) {
+        console.error("Lỗi gửi thông báo:", err);
+      }
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     if (activeBatchId) {
@@ -64,15 +75,21 @@ const App: React.FC = () => {
           const diff = Date.now() - activeBatch.timestamp;
           if (diff >= 30 * 60 * 1000) {
             setShowAlert(true);
+            // Chỉ thông báo hệ thống 1 lần cho mỗi mẻ
+            if (hasNotified.current !== activeBatchId) {
+              triggerSystemNotification();
+              hasNotified.current = activeBatchId;
+            }
           }
         }
-      }, 60000);
+      }, 10000); // Kiểm tra mỗi 10s
     } else {
       if (alertInterval.current) clearInterval(alertInterval.current);
       setShowAlert(false);
+      hasNotified.current = null;
     }
     return () => { if (alertInterval.current) clearInterval(alertInterval.current); };
-  }, [activeBatchId, history]);
+  }, [activeBatchId, history, triggerSystemNotification]);
 
   const saveCalculation = useCallback((result: CalculationResult) => {
     setHistory(prev => {
@@ -82,6 +99,7 @@ const App: React.FC = () => {
     });
     setActiveBatchId(result.id);
     setShowAlert(false);
+    hasNotified.current = null;
   }, []);
 
   const markChecklistDone = useCallback((id: string) => {
@@ -94,6 +112,7 @@ const App: React.FC = () => {
     });
     setActiveBatchId(null);
     setShowAlert(false);
+    hasNotified.current = null;
   }, []);
 
   const deleteRecord = useCallback((id: string) => {
@@ -102,8 +121,23 @@ const App: React.FC = () => {
       localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
-    if (activeBatchId === id) setActiveBatchId(null);
+    if (activeBatchId === id) {
+      setActiveBatchId(null);
+      hasNotified.current = null;
+    }
   }, [activeBatchId]);
+
+  const handleInstallClick = useCallback(async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.debug('User accepted the install prompt');
+    } else {
+      console.debug('User dismissed the install prompt');
+    }
+    setDeferredPrompt(null);
+  }, [deferredPrompt]);
 
   return (
     <div className="min-h-screen bg-[#f3f0f5] flex flex-col font-sans max-w-md mx-auto shadow-2xl relative overflow-x-hidden safe-padding-bottom">
@@ -114,7 +148,6 @@ const App: React.FC = () => {
       )}
 
       <header className={`bg-[#ef4a2c] pb-6 text-center shadow-md relative ${!showAlert ? 'safe-padding-top pt-8' : 'pt-4'}`}>
-        {/* Settings Icon Left */}
         <button 
           onClick={() => setIsSettingsOpen(true)}
           className="absolute left-4 bottom-6 p-2 text-white/90 hover:text-white transition-colors"
@@ -125,7 +158,6 @@ const App: React.FC = () => {
           </svg>
         </button>
 
-        {/* Menu Icon Right */}
         <button 
           onClick={() => setIsMenuOpen(true)}
           className="absolute right-4 bottom-6 p-2 text-white/90 hover:text-white transition-colors"
@@ -174,6 +206,7 @@ const App: React.FC = () => {
                     setHistory([]);
                     localStorage.removeItem(APP_STORAGE_KEY);
                     setActiveBatchId(null);
+                    hasNotified.current = null;
                   }
                 }} 
               />

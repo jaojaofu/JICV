@@ -1,5 +1,4 @@
-
-const CACHE_NAME = 'jicv-axit-v3';
+const CACHE_NAME = 'jicv-axit-v5';
 const ASSETS = [
   './index.html',
   './manifest.json',
