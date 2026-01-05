@@ -54,25 +54,29 @@ const App: React.FC = () => {
     if (!notifEnabledPref || !("Notification" in window)) return;
     
     if (Notification.permission === "granted") {
-      try {
-        // Sử dụng Service Worker để hiển thị thông báo (ổn định hơn trên mobile)
-        const registration = await navigator.serviceWorker.ready;
-        // Fix: Cast options to any to avoid TypeScript errors for non-standard or newer notification properties.
-        registration.showNotification(t.notif_title, {
-          body: t.notif_body,
-          icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
-          badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
-          tag: 'jicv-acid-alert',
-          renotify: true,
-          vibrate: [200, 100, 200]
-        } as any);
-      } catch (err) {
-        console.error("Lỗi gửi thông báo SW:", err);
-        // Fallback sang phương thức cũ nếu SW lỗi
-        new Notification(t.notif_title, {
-          body: t.notif_body,
-          icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png'
+      const registration = await navigator.serviceWorker.ready;
+      const sw = registration.active || navigator.serviceWorker.controller;
+      
+      const options = {
+        body: t.notif_body,
+        icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
+        badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
+        tag: 'jicv-acid-alert',
+        renotify: true,
+        vibrate: [200, 100, 200],
+        requireInteraction: true
+      };
+
+      if (sw) {
+        // Gửi tin nhắn vào SW để trigger (Cách ổn định nhất cho mobile)
+        sw.postMessage({
+          type: 'TRIGGER_NOTIF',
+          title: t.notif_title,
+          options
         });
+      } else {
+        // Fallback nếu SW chưa sẵn sàng
+        registration.showNotification(t.notif_title, options as any);
       }
     }
   }, [t]);

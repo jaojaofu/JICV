@@ -1,19 +1,18 @@
 
-const CACHE_NAME = 'jicv-axit-v5';
+const CACHE_NAME = 'jicv-axit-v6';
 const ASSETS = [
   './index.html',
   './manifest.json',
-  'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap'
+  'https://cdn.tailwindcss.com'
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -39,19 +38,20 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Xử lý khi người dùng nhấn vào thông báo
+// Lắng nghe tin nhắn từ App để hiển thị thông báo
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'TRIGGER_NOTIF') {
+    const { title, options } = event.data;
+    self.registration.showNotification(title, options);
+  }
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       if (clientList.length > 0) {
-        let client = clientList[0];
-        for (let i = 0; i < clientList.length; i++) {
-          if (clientList[i].focused) {
-            client = clientList[i];
-          }
-        }
-        return client.focus();
+        return clientList[0].focus();
       }
       return clients.openWindow('/');
     })

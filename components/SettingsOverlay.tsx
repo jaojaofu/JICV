@@ -14,6 +14,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
   const t = TRANSLATIONS[lang];
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
+  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -21,6 +22,9 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
       const currentPermission = ("Notification" in window) ? Notification.permission : 'default';
       setPermissionStatus(currentPermission);
       setNotifEnabled(savedPref && currentPermission === 'granted');
+      
+      // Kiểm tra xem có đang chạy ở chế độ PWA (Standalone) không - quan trọng cho iOS
+      setIsStandalone(window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true);
     }
   }, [isOpen]);
 
@@ -28,18 +32,28 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
     if (Notification.permission === "granted") {
       try {
         const registration = await navigator.serviceWorker.ready;
-        // Fix: Cast options to any to avoid TypeScript errors for properties like vibrate and badge.
-        registration.showNotification(t.notif_title, {
-          body: lang === 'vi' ? "Đây là thông báo thử nghiệm từ hệ thống JICV." : "これはJICVシステムのテスト通知です。",
+        const sw = registration.active || navigator.serviceWorker.controller;
+        
+        const options = {
+          body: lang === 'vi' ? "Thông báo thử nghiệm thành công! Hệ thống JICV đã sẵn sàng." : "テスト通知成功！JICVシステムは準備完了です。",
           icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
+          badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
           vibrate: [200, 100, 200],
-          badge: 'https://i.postimg.cc/kGy3M7x6/icon2.png'
-        } as any);
+          requireInteraction: true
+        };
+
+        if (sw) {
+          sw.postMessage({
+            type: 'TRIGGER_NOTIF',
+            title: t.notif_title,
+            options
+          });
+        } else {
+          registration.showNotification(t.notif_title, options as any);
+        }
       } catch (err) {
-        new Notification(t.notif_title, {
-          body: lang === 'vi' ? "Đây là thông báo thử nghiệm (phương thức cũ)." : "テスト通知です。",
-          icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png'
-        });
+        console.error("Lỗi test notif:", err);
+        alert(lang === 'vi' ? "Lỗi: Hãy load lại trang để Service Worker kích hoạt." : "エラー：ページをリロードしてください。");
       }
     } else {
       alert(lang === 'vi' ? "Bạn chưa cấp quyền thông báo!" : "通知権限が許可されていません！");
@@ -59,11 +73,11 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
       if (permission === "granted") {
         setNotifEnabled(true);
         localStorage.setItem(NOTIF_STORAGE_KEY, 'true');
-        testNotification();
+        setTimeout(testNotification, 500);
       } else if (permission === "denied") {
         alert(lang === 'vi' 
-          ? "Thông báo bị CHẶN. Vui lòng vào Cài đặt máy -> Ứng dụng -> Trình duyệt -> Thông báo -> Cho phép." 
-          : "通知がブロックされています。スマホの設定から許可してください。");
+          ? "Thông báo bị CHẶN. Vui lòng vào Cài đặt -> Quyền trang web để mở lại." 
+          : "通知がブロックされています。設定から許可してください。");
         setNotifEnabled(false);
         localStorage.setItem(NOTIF_STORAGE_KEY, 'false');
       }
@@ -74,6 +88,8 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
   };
 
   if (!isOpen) return null;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-start">
@@ -106,6 +122,17 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
 
           <section className="space-y-4">
             <h3 className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">{t.enable_notif}</h3>
+            
+            {isIOS && !isStandalone && (
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 mb-4">
+                <p className="text-[10px] text-orange-700 font-bold uppercase leading-tight">
+                  {lang === 'vi' 
+                    ? "Lưu ý cho iPhone: Bạn PHẢI dùng tính năng 'Thêm vào màn hình chính' mới nhận được thông báo." 
+                    : "iPhoneの注意：『ホーム画面に追加』を使用しないと通知を受け取れません。"}
+                </p>
+              </div>
+            )}
+
             <button 
               onClick={toggleNotifications}
               className={`w-full flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${notifEnabled ? 'border-green-500 bg-green-50' : 'border-slate-100 bg-slate-50'}`}
@@ -152,7 +179,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
             </button>
             <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
               <p className="text-[10px] text-blue-700 font-bold uppercase mb-1">Phiên bản</p>
-              <p className="text-xs text-blue-900 font-medium italic">Build 1.3.2-MOBILE-FIX</p>
+              <p className="text-xs text-blue-900 font-medium italic">Build 1.3.3-PWA-MODE</p>
             </div>
           </section>
 
