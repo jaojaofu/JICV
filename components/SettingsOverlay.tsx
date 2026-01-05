@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS, APP_STORAGE_KEY, NOTIF_STORAGE_KEY } from '../constants';
@@ -44,7 +43,7 @@ const SettingsOverlay: React.FC<SettingsOverlayProps> = ({ isOpen, onClose, lang
         // Test thông báo ngay để user biết đã thành công
         new Notification(t.notif_title, {
           body: lang === 'vi' ? "Thông báo hệ thống đã được kích hoạt!" : "通知が有効になりました！",
-          icon: 'https://i.postimg.cc/9Q88BDWv/icon.png'
+          icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png'
         });
       } else if (permission === "denied") {
         alert(lang === 'vi' 

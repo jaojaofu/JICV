@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CalculationResult, Language } from './types';
 import { APP_STORAGE_KEY, LANG_STORAGE_KEY, NOTIF_STORAGE_KEY, TRANSLATIONS } from './constants';
@@ -58,7 +57,7 @@ const App: React.FC = () => {
       try {
         new Notification(t.notif_title, {
           body: t.notif_body,
-          icon: 'https://i.postimg.cc/9Q88BDWv/icon.png',
+          icon: 'https://i.postimg.cc/kGy3M7x6/icon2.png',
           tag: 'jicv-acid-alert'
         });
       } catch (err) {
